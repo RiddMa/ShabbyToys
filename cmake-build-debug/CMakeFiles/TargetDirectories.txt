@@ -1,3 +1,1 @@
-/Users/ridd/CLionProjects/ShabbyToys/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/ridd/CLionProjects/ShabbyToys/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/ridd/CLionProjects/ShabbyToys/cmake-build-debug/CMakeFiles/ShabbyToys.dir
+/tmp/tmp.3svwJcGptr/cmake-build-debug/CMakeFiles/ShabbyToys.dir
