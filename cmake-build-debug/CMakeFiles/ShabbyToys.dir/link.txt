@@ -1,1 +1,0 @@
-/usr/bin/cc  -g    CMakeFiles/ShabbyToys.dir/linux/list.c.o  -o ShabbyToys -rdynamic 

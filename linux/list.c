@@ -6,24 +6,17 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MAX_LENGTH 4096
-#define TIME_S_PER_DAY 86400
-#define MAXBUFSIZE 1024
-#define NUM_OPT 6
+#define SEC_PER_DAY 86400
+#define MAX_BUF_SIZE 1024
+#define NUM_OPT 6 //number of available options
+#define H_VALUE 0x3f3f3f3f
+#define L_VALUE -1
 
-struct stat st;
-int opt_a = 0, opt_r = 0, opt_g = 0;
-int opt_h = 0x3f3f3f3f;
-int opt_l = -1;
-int opt_m = 0x3f3f3f3f;
-
-char opt[NUM_OPT] = {'a', 'r', 'm', 'l', 'h', '-'};
+int opt_a = 0, opt_r = 0, opt_g = 0, opt_h = H_VALUE, opt_l = L_VALUE, opt_m = H_VALUE;
 int *pOpt[NUM_OPT] = {&opt_a, &opt_r, &opt_m, &opt_l, &opt_h, &opt_g};
 
-// ret = stat(path, &st);
-void usage() {
-    printf(
-            "LIST 1.0.1 by Ridd, %s %s \
+void help() {
+    printf("LIST 1.0.1 by Ridd, %s %s \
         \nUsage: list [OPTION]... [FILE]..., \
         \nList information about the FILEs (the current directory by default),\n \
         \n  -?        \tDisplay help\
@@ -32,7 +25,7 @@ void usage() {
         \n  -l <bytes>\tOnly show files larger than <bytes>\
         \n  -h <bytes>\tOnly show files smaller than <bytes>\
         \n  -m <days> \tOnly show files modified within <days>\n",
-            __DATE__, __TIME__);
+           __DATE__, __TIME__);
     exit(0);
 }
 
@@ -40,13 +33,13 @@ void list(char *path, char *pre_path, char *filename) {
     DIR *dp;
     struct dirent *dirp;
     struct stat st;
-    if (0 > stat(path, &st)) {
-        printf("%s: No such file or directory\n", path);
+    if (stat(path, &st) < 0) {
+        printf("%s: No such file or directory.\n", path);
         return;
     }
     if (S_ISDIR(st.st_mode)) {
         if ((dp = opendir(path)) == NULL) {
-            printf("%s: No such file or directory\n", path);
+            printf("%s: No such file or directory.\n", path);
             return;
         }
         while ((dirp = readdir(dp)) != NULL) {
@@ -58,7 +51,7 @@ void list(char *path, char *pre_path, char *filename) {
             if (dirp->d_type == 4) {
                 if (opt_r && strcmp("..", dirp->d_name) && strcmp(".", dirp->d_name)) {
                     list(strcat(new_path, dirp->d_name), strcat(buf, "/"), dirp->d_name);
-                } else if (opt_a && '.' == dirp->d_name[0]) {
+                } else if (opt_a && (dirp->d_name[0] == '.')) {
                     printf("%16ld  %s\n", st.st_size, buf);
                 }
             } else {
@@ -69,14 +62,13 @@ void list(char *path, char *pre_path, char *filename) {
         char buf[256] = {0};
         time_t now = time(NULL);
         strcat(buf, pre_path);
-        if (st.st_size > opt_l && st.st_size < opt_h &&
-            (now - st.st_mtime) / TIME_S_PER_DAY < opt_m)
+        if (st.st_size > opt_l && st.st_size < opt_h && (now - st.st_mtime) / SEC_PER_DAY < opt_m)
             printf("%16ld  %s\n", st.st_size, strcat(buf, filename));
     }
 }
 
 void listfile_in_cwd(char *filename, int *num) {
-    char *cwd = getcwd(NULL, MAXBUFSIZE);
+    char *cwd = getcwd(NULL, MAX_BUF_SIZE);
     strcat(cwd, "/");
     if (filename[0] == '/')
         list(filename, "", filename);
@@ -86,27 +78,35 @@ void listfile_in_cwd(char *filename, int *num) {
     *num += 1;
 }
 
-void parse_args(int argc, char *argv[]) {
+void parse(int argc, char **argv) {
     int state = 0, num = 0;
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; i++) {// argv[0] is path to executable
         switch (state) {
             case 0:
-                if (!strcmp(argv[i], "-r"))
-                    opt_r = 1;
-                else if (!strcmp(argv[i], "-a"))
-                    opt_a = 1;
-                else if (!strcmp(argv[i], "-m")) {
-                    state = 2;
-                } else if (!strcmp(argv[i], "-l")) {
-                    state = 3;
-                } else if (!strcmp(argv[i], "-h")) {
-                    state = 4;
-                } else if (!strcmp(argv[i], "--")) {
-                    state = 5;
-                } else if (!strcmp(argv[i], "-?")) {
-                    usage();
-                } else {
-                    listfile_in_cwd(argv[i], &num);
+                switch (argv[i][1]) {
+                    case 'r':
+                        opt_r = 1;
+                        break;
+                    case 'a':
+                        opt_a = 1;
+                        break;
+                    case 'm':
+                        state = 2;
+                        break;
+                    case 'l':
+                        state = 3;
+                        break;
+                    case 'h':
+                        state = 4;
+                        break;
+                    case '-':
+                        state = 5;
+                        break;
+                    case '?':
+                        help();
+                        break;
+                    default:
+                        listfile_in_cwd(argv[i], &num);
                 }
                 break;
             case 8:
@@ -125,13 +125,13 @@ void parse_args(int argc, char *argv[]) {
                 break;
         }
     }
-    if ((0 != state) && (8 != state))
-        usage();
-    if (!num)
+    if ((state != 0) && (state != 8))
+        help();
+    if (num == 0)
         listfile_in_cwd("", &num);
 }
 
 int main(int argc, char *argv[]) {
-    parse_args(argc, argv);
+    parse(argc, argv);
     return 0;
 }
