@@ -1,3 +1,57 @@
+# list 程序
+
+## 程序功能
+
+```
+-h					显示帮助
+-a					显示.开头文件
+-r					递归
+-l <bytes>	只显示大于l bytes的文件
+-s <bytes>	只显示小于s bytes的文件
+-m <days>		只显示修改于m天之内的文件
+```
+
+## 程序运行效果
+
+```bash
+ridd@Ridds-MacBook-Pro linux % make clean
+ridd@Ridds-MacBook-Pro linux % make
+ridd@Ridds-MacBook-Pro linux % ./list
+            4516  list.c
+             260  report.md
+              64  makefile
+           50576  list
+          folder  testDir
+ridd@Ridds-MacBook-Pro linux % ./list -a
+          folder  .
+          folder  ..
+            4516  list.c
+            6148  .DS_Store
+             260  report.md
+              64  makefile
+           50576  list
+          folder  testDir
+ridd@Ridds-MacBook-Pro linux % ./list -a -r
+          folder  .
+          folder  ..
+            4516  list.c
+            6148  .DS_Store
+             260  report.md
+              64  makefile
+           50576  list
+          folder  testDir
+          folder  testDir/.
+          folder  testDir/..
+               0  testDir/testFile
+ridd@Ridds-MacBook-Pro linux % ./list -l 1024 -s 10240
+            4516  list.c
+            1511  report.md
+          folder  testDir
+```
+
+## 源代码
+
+```c
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -137,3 +191,5 @@ int main(int argc, char *argv[]) {
     parse(argc, argv);
     return 0;
 }
+```
+
